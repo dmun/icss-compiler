@@ -4,20 +4,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HANStack<T> implements IHANStack<T> {
-    private List<T> stack = new ArrayList<>();
+    IHANLinkedList<T> stack;
 
+    public HANStack() {
+        this.stack = new HANLinkedList<>();
+    }
 
     @Override
     public void push(T value) {
+        stack.addFirst(value);
     }
 
     @Override
     public T pop() {
-        return null;
+        var popped = stack.getFirst();
+        stack.removeFirst();
+        return popped;
     }
 
     @Override
     public T peek() {
-        return null;
+        return stack.getFirst();
+    }
+
+    @Override
+    public String toString() {
+        return stack.toString();
     }
 }

@@ -15,15 +15,10 @@ class HANLinkedListTest {
 
     @Test
     void test() {
-        var list = new HANLinkedList<Integer>();
-        list.addFirst(9);
-        list.addFirst(5);
-        list.addFirst(2);
-        list.addFirst(8);
-
-        System.out.println(list);
-        list.insert(1, 7);
-        System.out.println(list);
-        System.out.println(list.getSize());
+        var stack = new HANStack<Integer>();
+        stack.push(1);
+        stack.push(10);
+        stack.push(9);
+        stack.push(2);
     }
 }
