@@ -55,11 +55,16 @@ tagSelector: LOWER_IDENT;
 idSelector: ID_IDENT;
 classSelector: CLASS_IDENT;
 
-declaration: propertyName COLON (literal | variableReference) SEMICOLON;
+declaration: propertyName COLON operation SEMICOLON;
 propertyName: LOWER_IDENT;
-literal: boolLiteral | colorLiteral | percentageLiteral | pixelLiteral | scalarLiteral;
+literal: boolLiteral | colorLiteral | percentageLiteral | pixelLiteral | scalarLiteral | variableReference;
 boolLiteral: TRUE | FALSE;
 colorLiteral: COLOR;
 percentageLiteral: PERCENTAGE;
 pixelLiteral: PIXELSIZE;
 scalarLiteral: SCALAR;
+
+operation: literal |
+    operation MUL operation |
+    operation PLUS operation |
+    operation MIN operation;

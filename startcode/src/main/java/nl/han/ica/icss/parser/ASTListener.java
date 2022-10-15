@@ -130,6 +130,18 @@ public class ASTListener extends ICSSBaseListener {
 	}
 
 	@Override
+	public void enterPixelLiteral(ICSSParser.PixelLiteralContext ctx) {
+		var pixel = new PixelLiteral(ctx.getText());
+		currentContainer.peek().addChild(pixel);
+	}
+
+	@Override
+	public void enterScalarLiteral(ICSSParser.ScalarLiteralContext ctx) {
+		var scalar = new ScalarLiteral(ctx.getText());
+		currentContainer.peek().addChild(scalar);
+	}
+
+	@Override
 	public void enterVariableAssignment(ICSSParser.VariableAssignmentContext ctx) {
 		currentContainer.push(new VariableAssignment());
 	}
@@ -146,14 +158,30 @@ public class ASTListener extends ICSSBaseListener {
 	}
 
 	@Override
-	public void enterPixelLiteral(ICSSParser.PixelLiteralContext ctx) {
-		var pixel = new PixelLiteral(ctx.getText());
-		currentContainer.peek().addChild(pixel);
+	public void enterOperation(ICSSParser.OperationContext ctx) {
+		if (ctx.getChildCount() == 3) {
+			Operation operation;
+			switch (ctx.getChild(1).getText()) {
+				case "*":
+					operation = new MultiplyOperation();
+					break;
+				case "+":
+					operation = new AddOperation();
+					break;
+				default:
+					operation = new SubtractOperation();
+					break;
+			}
+			currentContainer.push(operation);
+		}
 	}
 
 	@Override
-	public void enterScalarLiteral(ICSSParser.ScalarLiteralContext ctx) {
-		var scalar = new ScalarLiteral(ctx.getText());
-		currentContainer.peek().addChild(scalar);
+	public void exitOperation(ICSSParser.OperationContext ctx) {
+		// only exit when the operation is not just a literal
+		if (ctx.getChildCount() != 1) {
+			var operation = currentContainer.pop();
+			currentContainer.peek().addChild(operation);
+		}
 	}
 }
