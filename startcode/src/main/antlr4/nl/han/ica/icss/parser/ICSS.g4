@@ -48,14 +48,14 @@ ASSIGNMENT_OPERATOR: ':=';
 stylesheet: variableAssignment* stylerule*;
 variableAssignment: variableReference ASSIGNMENT_OPERATOR literal SEMICOLON;
 variableReference: CAPITAL_IDENT;
-stylerule: selector OPEN_BRACE ruleElement* CLOSE_BRACE?;
+stylerule: selector OPEN_BRACE ruleElement* CLOSE_BRACE;
 
 selector: tagSelector | idSelector | classSelector;
 tagSelector: LOWER_IDENT;
 idSelector: ID_IDENT;
 classSelector: CLASS_IDENT;
 
-ruleElement: ifClause | declaration;
+ruleElement: ifClause | declaration | variableAssignment;
 
 declaration: propertyName COLON operation SEMICOLON;
 propertyName: LOWER_IDENT;
