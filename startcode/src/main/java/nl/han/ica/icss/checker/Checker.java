@@ -5,6 +5,7 @@ import nl.han.ica.datastructures.HANStack;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.datastructures.IHANStack;
 import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.literals.ColorLiteral;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.ArrayList;
@@ -29,6 +30,11 @@ public class Checker {
         var variablesInScope = new ArrayList<>(variables);
         if (node instanceof ElseClause) {
             variablesInIf.clear();
+        }
+        if (node instanceof Operation) {
+            if (node.getChildren().get(0) instanceof ColorLiteral || node.getChildren().get(1) instanceof ColorLiteral) {
+                node.setError("Invalid operation");
+            }
         }
         for (var child : node.getChildren()) {
             if (child instanceof VariableAssignment) {
