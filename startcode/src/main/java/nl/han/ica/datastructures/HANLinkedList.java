@@ -107,4 +107,18 @@ public class HANLinkedList<T> implements IHANLinkedList<T> {
         }
         return string + "]";
     }
+
+    public boolean contains(T value) {
+        var node = this.first;
+        if (node.getValue() == value) {
+            return true;
+        }
+        while (node.hasNext()) {
+            node = node.getNext();
+            if (node.getValue() == value) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
