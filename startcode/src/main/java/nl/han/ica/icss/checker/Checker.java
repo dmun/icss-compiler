@@ -17,15 +17,15 @@ import java.util.List;
 
 public class Checker {
 
-    private List<HashMap<String, ExpressionType>> variableTypes;
+    private HashMap<String, ExpressionType> variableTypes;
 
     public void check(AST ast) {
-        variableTypes = new LinkedList<>();
+        variableTypes = new HashMap<>();
         traverse(ast.root);
     }
 
     private void traverse(ASTNode node) {
-        var variableCount = 0;
+        var scopeVariables = new ArrayList<String>();
 
         // deny operations with colors
         if (node instanceof Operation) {
@@ -37,22 +37,27 @@ public class Checker {
         for (var child : node.getChildren()) {
             // capture any new variable assignment
             if (child instanceof VariableAssignment) {
-                var newVariable = new HashMap<String, ExpressionType>();
-                ExpressionType type;
-                type = getExpressionType(child);
-                newVariable.put(((VariableReference) child.getChildren().get(0)).name, type);
-                this.variableTypes.add(newVariable);
-                variableCount++;
+                var type = getExpressionType(child);
+                var variableName = ((VariableReference) child.getChildren().get(0)).name;
+                this.variableTypes.put(variableName, type);
+                scopeVariables.add(variableName);
+            }
+
+            // TODO: Fix for bool
+            if (child instanceof IfClause) {
+                var name = ((VariableReference) child.getChildren().get(0)).name;
+                if (this.variableTypes.get(name) != ExpressionType.BOOL) {
+                    child.setError("Invalid expression type: " + name);
+                }
             }
 
             // clear scope variables when entering else clause
             if (child instanceof ElseClause) {
-                clearScopeVariables(variableCount);
-                variableCount = 0;
+                scopeVariables.forEach(this.variableTypes::remove);
             }
 
             // deny any undefined variable references
-            if (child instanceof VariableReference && !(node instanceof VariableAssignment) && !inScope(((VariableReference) child).name)) {
+            if (child instanceof VariableReference && !(node instanceof VariableAssignment) && !this.variableTypes.containsKey(((VariableReference) child).name)) {
                 child.setError("Undefined in scope: " + ((VariableReference) child).name);
             }
 
@@ -62,13 +67,7 @@ public class Checker {
         }
 
         // remove the variables when leaving a scope
-        clearScopeVariables(variableCount);
-    }
-
-    private void clearScopeVariables(int variableCount) {
-        for (int i = 0; i < variableCount; i++) {
-            this.variableTypes.remove(this.variableTypes.size() - 1);
-        }
+        scopeVariables.forEach(this.variableTypes::remove);
     }
 
     private static ExpressionType getExpressionType(ASTNode child) {
@@ -93,9 +92,5 @@ public class Checker {
                 type = ExpressionType.UNDEFINED;
         }
         return type;
-    }
-
-    private boolean inScope(String variableName) {
-        return this.variableTypes.stream().anyMatch(e -> e.containsKey(variableName));
     }
 }
