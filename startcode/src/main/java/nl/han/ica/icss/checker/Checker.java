@@ -40,7 +40,9 @@ public class Checker {
                 var type = getExpressionType(child);
                 var variableName = ((VariableReference) child.getChildren().get(0)).name;
                 this.variableTypes.put(variableName, type);
-                scopeVariables.add(variableName);
+                if (!variableTypes.containsKey(variableName)) {
+                    scopeVariables.add(variableName);
+                }
             }
 
             // TODO: Fix for bool
