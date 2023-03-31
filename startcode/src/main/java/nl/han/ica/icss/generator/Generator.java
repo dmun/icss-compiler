@@ -47,13 +47,19 @@ public class Generator {
 	}
 
 	private String getLiteralValue(Literal literal) {
-		return switch (literal.getClass().getSimpleName()) {
-			case "ColorLiteral" -> ((ColorLiteral) literal).value;
-			case "PercentageLiteral" -> ((PercentageLiteral) literal).value + "%";
-			case "PixelLiteral" -> ((PixelLiteral) literal).value + "px";
-			case "ScalarLiteral", "BoolLiteral" -> literal.toString();
-			default -> "";
-		};
+		switch (literal.getClass().getSimpleName()) {
+			case "ColorLiteral":
+				return ((ColorLiteral) literal).value;
+			case "PercentageLiteral":
+				return ((PercentageLiteral) literal).value + "%";
+			case "PixelLiteral":
+				return ((PixelLiteral) literal).value + "px";
+			case "ScalarLiteral":
+			case "BoolLiteral":
+				return literal.toString();
+			default:
+				return "";
+		}
 	}
 	
 }

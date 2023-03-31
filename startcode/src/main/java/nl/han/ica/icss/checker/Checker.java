@@ -21,43 +21,13 @@ public class Checker {
     private void traverse(ASTNode node) {
         variableTypes.addFirst(new HashMap<String, ExpressionType>());
 
-        // deny operations with colors
-        if (node instanceof Operation) {
-            if (node.getChildren().get(0) instanceof ColorLiteral || node.getChildren().get(1) instanceof ColorLiteral) {
-                node.setError("Invalid ColorLiteral operation");
-            }
-        }
+        checkColorOperations(node);
 
         for (var child : node.getChildren()) {
-            // capture any new variable assignment
-            if (child instanceof VariableAssignment) {
-                var type = getExpressionType(child);
-                var variableName = ((VariableReference) child.getChildren().get(0)).name;
-                this.variableTypes.getFirst().put(variableName, type);
-            }
-
-            if (child instanceof IfClause) {
-                var ifClause = (IfClause) child;
-
-                if (ifClause.conditionalExpression instanceof VariableReference) {
-                    var name = ((VariableReference) ifClause.conditionalExpression).name;
-                    if (this.getVariableValue(name) != ExpressionType.BOOL) {
-                        child.setError("Invalid expression type: " + name);
-                    }
-                }
-            }
-
-            // clear scope variables when entering else clause
-            if (child instanceof ElseClause) {
-                this.variableTypes.getFirst().clear();
-            }
-
-            // deny any undefined variable references
-            if (child instanceof VariableReference
-                    && !(node instanceof VariableAssignment)
-                    && !containsVariable(((VariableReference) child).name)) {
-                child.setError("Undefined in scope: " + ((VariableReference) child).name);
-            }
+            handleVariableAssignment(child);
+            checkIfClause(child);
+            handleElseClause(child);
+            checkUndefinedVariables(node, child);
 
             if (child.getChildren() != null) {
                 traverse(child);
@@ -68,15 +38,64 @@ public class Checker {
         this.variableTypes.removeFirst();
     }
 
+    private static void checkColorOperations(ASTNode node) {
+        if (node instanceof Operation) {
+            if (node.getChildren().get(0) instanceof ColorLiteral || node.getChildren().get(1) instanceof ColorLiteral) {
+                node.setError("Invalid ColorLiteral operation");
+            }
+        }
+    }
+
+    private void checkUndefinedVariables(ASTNode node, ASTNode child) {
+        if (child instanceof VariableReference
+                && !(node instanceof VariableAssignment)
+                && !containsVariable(((VariableReference) child).name)) {
+            child.setError("Undefined in scope: " + ((VariableReference) child).name);
+        }
+    }
+
+    private void handleElseClause(ASTNode child) {
+        if (child instanceof ElseClause) {
+            this.variableTypes.getFirst().clear();
+        }
+    }
+
+    private void checkIfClause(ASTNode child) {
+        if (child instanceof IfClause) {
+            var ifClause = (IfClause) child;
+
+            if (ifClause.conditionalExpression instanceof VariableReference) {
+                var name = ((VariableReference) ifClause.conditionalExpression).name;
+                if (this.getVariableValue(name) != ExpressionType.BOOL) {
+                    child.setError("Invalid expression type: " + name);
+                }
+            }
+        }
+    }
+
+    private void handleVariableAssignment(ASTNode child) {
+        if (child instanceof VariableAssignment) {
+            var type = getExpressionType(child);
+            var variableName = ((VariableReference) child.getChildren().get(0)).name;
+            this.variableTypes.getFirst().put(variableName, type);
+        }
+    }
+
     private static ExpressionType getExpressionType(ASTNode child) {
-        return switch (child.getChildren().get(1).getClass().getSimpleName()) {
-            case "PixelLiteral" -> ExpressionType.PIXEL;
-            case "PercentageLiteral" -> ExpressionType.PERCENTAGE;
-            case "ColorLiteral" -> ExpressionType.COLOR;
-            case "BoolLiteral" -> ExpressionType.BOOL;
-            case "ScalarLiteral" -> ExpressionType.SCALAR;
-            default -> ExpressionType.UNDEFINED;
-        };
+        switch (child.getChildren().get(1).getClass().getSimpleName()) {
+            case "PixelLiteral":
+                return ExpressionType.PIXEL;
+            case "PercentageLiteral":
+                return ExpressionType.PERCENTAGE;
+            case "ColorLiteral":
+                return ExpressionType.COLOR;
+            case "BoolLiteral":
+                return ExpressionType.BOOL;
+            case "ScalarLiteral":
+                return ExpressionType.SCALAR;
+            default:
+                return ExpressionType.UNDEFINED;
+        }
     }
 
     private ExpressionType getVariableValue(String name) {

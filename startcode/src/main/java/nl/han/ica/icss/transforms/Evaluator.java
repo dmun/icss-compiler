@@ -5,7 +5,6 @@ import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.*;
 import nl.han.ica.icss.ast.operations.AddOperation;
-import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
 
 import java.util.ArrayList;
@@ -53,28 +52,7 @@ public class Evaluator implements Transform {
                 handleDeclaration((Declaration) child);
                 newBody.add(child);
             } else if (child instanceof IfClause) {
-                IfClause ifClause = (IfClause) child;
-
-                BoolLiteral boolLiteral;
-
-                if (ifClause.conditionalExpression instanceof VariableReference) {
-                    var name = ((VariableReference) ifClause.conditionalExpression).name;
-                    boolLiteral = (BoolLiteral) getVariableValue(name);
-                } else {
-                    boolLiteral = (BoolLiteral) ifClause.conditionalExpression;
-                }
-
-                var conditionalExpression = boolLiteral.value;
-
-                if (conditionalExpression) {
-                    ifClause.elseClause = null;
-                    traverseRuleBody(child);
-                    newBody.addAll(ifClause.body);
-                } else if (ifClause.elseClause != null) {
-                    ifClause.body = new ArrayList<>();
-                    traverseRuleBody(child);
-                    newBody.addAll(ifClause.elseClause.body);
-                }
+                handleIfClause(newBody, child);
             } else if (child instanceof ElseClause) {
                 traverseRuleBody(child);
                 newBody.addAll(((ElseClause) child).body);
@@ -91,6 +69,31 @@ public class Evaluator implements Transform {
             ((IfClause) ruleBody).body = newBody;
         } else if (ruleBody instanceof ElseClause) {
             ((ElseClause) ruleBody).body = newBody;
+        }
+    }
+
+    private void handleIfClause(ArrayList<ASTNode> newBody, ASTNode node) {
+        IfClause ifClause = (IfClause) node;
+
+        BoolLiteral boolLiteral;
+
+        if (ifClause.conditionalExpression instanceof VariableReference) {
+            var name = ((VariableReference) ifClause.conditionalExpression).name;
+            boolLiteral = (BoolLiteral) getVariableValue(name);
+        } else {
+            boolLiteral = (BoolLiteral) ifClause.conditionalExpression;
+        }
+
+        var conditionalExpression = boolLiteral.value;
+
+        if (conditionalExpression) {
+            ifClause.elseClause = null;
+            traverseRuleBody(node);
+            newBody.addAll(ifClause.body);
+        } else if (ifClause.elseClause != null) {
+            ifClause.body = new ArrayList<>();
+            traverseRuleBody(node);
+            newBody.addAll(ifClause.elseClause.body);
         }
     }
 
