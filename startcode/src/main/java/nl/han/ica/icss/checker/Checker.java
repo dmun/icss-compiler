@@ -6,7 +6,6 @@ import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.ColorLiteral;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 
@@ -20,8 +19,6 @@ public class Checker {
     }
 
     private void traverse(ASTNode node) {
-        var scopeVariables = new ArrayList<String>();
-
         variableTypes.addFirst(new HashMap<String, ExpressionType>());
 
         // deny operations with colors
@@ -36,9 +33,6 @@ public class Checker {
             if (child instanceof VariableAssignment) {
                 var type = getExpressionType(child);
                 var variableName = ((VariableReference) child.getChildren().get(0)).name;
-//                if (!containsVariable(variableName)) {
-//                    scopeVariables.add(variableName);
-//                }
                 this.variableTypes.getFirst().put(variableName, type);
             }
 
@@ -55,18 +49,13 @@ public class Checker {
 
             // clear scope variables when entering else clause
             if (child instanceof ElseClause) {
-//                scopeVariables.forEach(this.variableTypes.getFirst()::remove);
                 this.variableTypes.getFirst().clear();
-                System.out.println("after clear:" + this.variableTypes);
             }
 
-            System.out.println(containsVariable("Poop"));
             // deny any undefined variable references
-//            System.out.println(variableTypes);
             if (child instanceof VariableReference
                     && !(node instanceof VariableAssignment)
                     && !containsVariable(((VariableReference) child).name)) {
-                System.out.println("    error");
                 child.setError("Undefined in scope: " + ((VariableReference) child).name);
             }
 

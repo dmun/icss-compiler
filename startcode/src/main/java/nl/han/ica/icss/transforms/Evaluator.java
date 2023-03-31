@@ -39,10 +39,13 @@ public class Evaluator implements Transform {
     }
 
     private void traverseRuleBody(ASTNode ruleBody) {
+        // keep track of the new body
         var newBody = new ArrayList<ASTNode>();
 
+        // add a new scope for the variables
         this.variableValues.addFirst(new HashMap<String, Literal>());
 
+        // traverse the body
         for (var child : ruleBody.getChildren()) {
             if (child instanceof VariableAssignment) {
                 handleVariableAssignment((VariableAssignment) child);
@@ -61,9 +64,9 @@ public class Evaluator implements Transform {
                     boolLiteral = (BoolLiteral) ifClause.conditionalExpression;
                 }
 
-                var condition = boolLiteral.value;
+                var conditionalExpression = boolLiteral.value;
 
-                if (condition) {
+                if (conditionalExpression) {
                     ifClause.elseClause = null;
                     traverseRuleBody(child);
                     newBody.addAll(ifClause.body);
@@ -78,8 +81,10 @@ public class Evaluator implements Transform {
             }
         }
 
+        // remove the scope for the variables
         this.variableValues.removeFirst();
 
+        // update the body
         if (ruleBody instanceof Stylerule) {
             ((Stylerule) ruleBody).body = newBody;
         } else if (ruleBody instanceof IfClause) {

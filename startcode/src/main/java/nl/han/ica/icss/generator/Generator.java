@@ -14,10 +14,12 @@ public class Generator {
 			var node = ast.root.getChildren().get(i);
 
 			if (node instanceof Stylerule) {
+				// Add selectors
 				stringBuilder.append(((Stylerule) node).selectors.get(0))
 						.append(" {")
 						.append(System.lineSeparator());
 
+				// Add declarations
 				for (ASTNode child : node.getChildren()) {
 					if (child instanceof Declaration) {
 						var declaration = (Declaration) child;
@@ -31,6 +33,7 @@ public class Generator {
 					}
 				}
 
+				// Add closing bracket
 				stringBuilder.append("}")
 						.append(System.lineSeparator());
 
