@@ -84,6 +84,9 @@ public class HANLinkedList<T> implements IHANLinkedList<T> {
 
     @Override
     public int getSize() {
+        if (this.first == null) {
+            return 0;
+        }
         int size = 0;
         var node = this.first;
         boolean lastNode = false;
@@ -100,12 +103,15 @@ public class HANLinkedList<T> implements IHANLinkedList<T> {
     @Override
     public String toString() {
         var node = this.first;
-        var string = "[" + node.getValue();
-        while (node.hasNext()) {
-            node = node.getNext();
-            string += ", " + node.getValue();
+        if (node != null) {
+            var string = "[" + node.getValue();
+            while (node.hasNext()) {
+                node = node.getNext();
+                string += ", " + node.getValue();
+            }
+            return string + "]";
         }
-        return string + "]";
+        return "[]";
     }
 
     public boolean contains(T value) {
