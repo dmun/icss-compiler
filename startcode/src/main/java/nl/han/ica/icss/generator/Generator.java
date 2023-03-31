@@ -9,7 +9,7 @@ public class Generator {
 
 	public String generate(AST ast) {
 		StringBuilder stringBuilder = new StringBuilder();
-//		for (ASTNode node : ast.root.getChildren()) {
+
 		for (int i = 0; i < ast.root.getChildren().size(); i++) {
 			var node = ast.root.getChildren().get(i);
 
@@ -21,6 +21,7 @@ public class Generator {
 				for (ASTNode child : node.getChildren()) {
 					if (child instanceof Declaration) {
 						var declaration = (Declaration) child;
+
 						stringBuilder.append(" ".repeat(TABSTOP))
 								.append(declaration.property.name)
 								.append(": ")
@@ -33,6 +34,7 @@ public class Generator {
 				stringBuilder.append("}")
 						.append(System.lineSeparator());
 
+				// If not last stylerule, add a new line
 				if (i < ast.root.getChildren().size() - 1) {
 					stringBuilder.append(System.lineSeparator());
 				}

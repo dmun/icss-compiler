@@ -71,5 +71,5 @@ operation: literal |
     operation PLUS operation |
     operation MIN operation;
 
-ifClause: IF BOX_BRACKET_OPEN variableReference BOX_BRACKET_CLOSE OPEN_BRACE ruleElement* CLOSE_BRACE elseClause?;
+ifClause: IF BOX_BRACKET_OPEN (variableReference|boolLiteral) BOX_BRACKET_CLOSE OPEN_BRACE ruleElement* CLOSE_BRACE elseClause?;
 elseClause: ELSE OPEN_BRACE ruleElement* CLOSE_BRACE;

@@ -31,14 +31,14 @@ public class Evaluator implements Transform {
             if (child instanceof VariableAssignment) {
                 handleVariableAssignment((VariableAssignment) child);
             } else if (child instanceof Stylerule) {
-                traverseRuleBody((Stylerule) child, node);
+                traverseRuleBody((Stylerule) child);
             }
         }
 
         this.variableValues.removeFirst();
     }
 
-    private void traverseRuleBody(ASTNode ruleBody, ASTNode parent) {
+    private void traverseRuleBody(ASTNode ruleBody) {
         var newBody = new ArrayList<ASTNode>();
 
         this.variableValues.addFirst(new HashMap<String, Literal>());
@@ -49,20 +49,31 @@ public class Evaluator implements Transform {
             } else if (child instanceof Declaration) {
                 handleDeclaration((Declaration) child);
                 newBody.add(child);
-            // TODO: Fix for else
             } else if (child instanceof IfClause) {
-                var name = ((VariableReference) ((IfClause) child).conditionalExpression).name;
-                var value = ((BoolLiteral) getVariableValue(name)).value;
+                IfClause ifClause = (IfClause) child;
 
-                if (value) {
-                    traverseRuleBody(child, ruleBody);
-                    newBody.addAll(((IfClause) child).body);
-                } else if (((IfClause) child).elseClause != null) {
-                    traverseRuleBody(child, ruleBody);
-                    newBody.addAll(((IfClause) child).elseClause.body);
+                BoolLiteral boolLiteral;
+
+                if (ifClause.conditionalExpression instanceof VariableReference) {
+                    var name = ((VariableReference) ifClause.conditionalExpression).name;
+                    boolLiteral = (BoolLiteral) getVariableValue(name);
+                } else {
+                    boolLiteral = (BoolLiteral) ifClause.conditionalExpression;
+                }
+
+                var condition = boolLiteral.value;
+
+                if (condition) {
+                    ifClause.elseClause = null;
+                    traverseRuleBody(child);
+                    newBody.addAll(ifClause.body);
+                } else if (ifClause.elseClause != null) {
+                    ifClause.body = new ArrayList<>();
+                    traverseRuleBody(child);
+                    newBody.addAll(ifClause.elseClause.body);
                 }
             } else if (child instanceof ElseClause) {
-                traverseRuleBody(child, ruleBody);
+                traverseRuleBody(child);
                 newBody.addAll(((ElseClause) child).body);
             }
         }
@@ -100,19 +111,14 @@ public class Evaluator implements Transform {
             lhs = handleOperation((Operation) lhs);
         }
 
-//        System.out.println(rhs.getClass());
         if (rhs instanceof VariableReference) {
             var name = ((VariableReference) rhs).name;
-//            System.out.println("variablerefrence");
             rhs = getVariableValue(name);
         } else if (rhs instanceof Operation) {
-//            System.out.println("operation");
             rhs = handleOperation((Operation) rhs);
         }
 
-//        System.out.println("lhs: " + lhs);
         var lhsValue = getLiteralValue((Literal) lhs);
-//        System.out.println("rhs: " + rhs);
         var rhsValue = getLiteralValue((Literal) rhs);
 
         if (operation instanceof AddOperation) {
@@ -169,6 +175,6 @@ public class Evaluator implements Transform {
                 return this.variableValues.get(i).get(name);
             }
         }
-        throw new NullPointerException();
+        throw new RuntimeException("Variable " + name + " is not declared");
     }
 }

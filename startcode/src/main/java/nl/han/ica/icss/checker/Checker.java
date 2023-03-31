@@ -1,36 +1,33 @@
 package nl.han.ica.icss.checker;
 
 import nl.han.ica.datastructures.HANLinkedList;
-import nl.han.ica.datastructures.HANStack;
 import nl.han.ica.datastructures.IHANLinkedList;
-import nl.han.ica.datastructures.IHANStack;
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.ast.literals.ColorLiteral;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 
 
 public class Checker {
 
-    private HashMap<String, ExpressionType> variableTypes;
+    private IHANLinkedList<HashMap<String, ExpressionType>> variableTypes;
 
     public void check(AST ast) {
-        variableTypes = new HashMap<>();
+        variableTypes = new HANLinkedList<>();
         traverse(ast.root);
     }
 
     private void traverse(ASTNode node) {
         var scopeVariables = new ArrayList<String>();
 
+        variableTypes.addFirst(new HashMap<String, ExpressionType>());
+
         // deny operations with colors
         if (node instanceof Operation) {
             if (node.getChildren().get(0) instanceof ColorLiteral || node.getChildren().get(1) instanceof ColorLiteral) {
-                node.setError("Invalid operation");
+                node.setError("Invalid ColorLiteral operation");
             }
         }
 
@@ -39,27 +36,37 @@ public class Checker {
             if (child instanceof VariableAssignment) {
                 var type = getExpressionType(child);
                 var variableName = ((VariableReference) child.getChildren().get(0)).name;
-                this.variableTypes.put(variableName, type);
-                if (!variableTypes.containsKey(variableName)) {
-                    scopeVariables.add(variableName);
-                }
+//                if (!containsVariable(variableName)) {
+//                    scopeVariables.add(variableName);
+//                }
+                this.variableTypes.getFirst().put(variableName, type);
             }
 
-            // TODO: Fix for bool
             if (child instanceof IfClause) {
-                var name = ((VariableReference) child.getChildren().get(0)).name;
-                if (this.variableTypes.get(name) != ExpressionType.BOOL) {
-                    child.setError("Invalid expression type: " + name);
+                var ifClause = (IfClause) child;
+
+                if (ifClause.conditionalExpression instanceof VariableReference) {
+                    var name = ((VariableReference) ifClause.conditionalExpression).name;
+                    if (this.getVariableValue(name) != ExpressionType.BOOL) {
+                        child.setError("Invalid expression type: " + name);
+                    }
                 }
             }
 
             // clear scope variables when entering else clause
             if (child instanceof ElseClause) {
-                scopeVariables.forEach(this.variableTypes::remove);
+//                scopeVariables.forEach(this.variableTypes.getFirst()::remove);
+                this.variableTypes.getFirst().clear();
+                System.out.println("after clear:" + this.variableTypes);
             }
 
+            System.out.println(containsVariable("Poop"));
             // deny any undefined variable references
-            if (child instanceof VariableReference && !(node instanceof VariableAssignment) && !this.variableTypes.containsKey(((VariableReference) child).name)) {
+//            System.out.println(variableTypes);
+            if (child instanceof VariableReference
+                    && !(node instanceof VariableAssignment)
+                    && !containsVariable(((VariableReference) child).name)) {
+                System.out.println("    error");
                 child.setError("Undefined in scope: " + ((VariableReference) child).name);
             }
 
@@ -69,30 +76,35 @@ public class Checker {
         }
 
         // remove the variables when leaving a scope
-        scopeVariables.forEach(this.variableTypes::remove);
+        this.variableTypes.removeFirst();
     }
 
     private static ExpressionType getExpressionType(ASTNode child) {
-        ExpressionType type;
-        switch (child.getChildren().get(1).getClass().getSimpleName()) {
-            case "PixelLiteral":
-                type = ExpressionType.PIXEL;
-                break;
-            case "PercentageLiteral":
-                type = ExpressionType.PERCENTAGE;
-                break;
-            case "ColorLiteral":
-                type = ExpressionType.COLOR;
-                break;
-            case "BoolLiteral":
-                type = ExpressionType.BOOL;
-                break;
-            case "ScalarLiteral":
-                type = ExpressionType.SCALAR;
-                break;
-            default:
-                type = ExpressionType.UNDEFINED;
+        return switch (child.getChildren().get(1).getClass().getSimpleName()) {
+            case "PixelLiteral" -> ExpressionType.PIXEL;
+            case "PercentageLiteral" -> ExpressionType.PERCENTAGE;
+            case "ColorLiteral" -> ExpressionType.COLOR;
+            case "BoolLiteral" -> ExpressionType.BOOL;
+            case "ScalarLiteral" -> ExpressionType.SCALAR;
+            default -> ExpressionType.UNDEFINED;
+        };
+    }
+
+    private ExpressionType getVariableValue(String name) {
+        for (int i = 0; i < this.variableTypes.getSize(); i++) {
+            if (this.variableTypes.get(i).containsKey(name)) {
+                return this.variableTypes.get(i).get(name);
+            }
         }
-        return type;
+        throw new RuntimeException("Variable " + name + " is not declared");
+    }
+
+    private boolean containsVariable(String name) {
+        for (int i = 0; i < this.variableTypes.getSize(); i++) {
+            if (this.variableTypes.get(i).containsKey(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
